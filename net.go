@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+
+	"github.com/crowspin/pokecache"
 )
 
 const (
@@ -11,6 +13,7 @@ const (
 )
 
 func apiGet(endpoint string) ([]byte, error) {
+	var v pokecache.Cache
 	url := APIURL + endpoint
 
 	res, err := http.Get(url)
