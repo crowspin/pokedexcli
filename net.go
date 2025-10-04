@@ -4,17 +4,18 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-
-	"github.com/crowspin/pokecache"
 )
 
 const (
 	APIURL string = "https://pokeapi.co/api/v2"
 )
 
-func apiGet(endpoint string) ([]byte, error) {
-	var v pokecache.Cache
-	url := APIURL + endpoint
+func apiGet(url string) ([]byte, error) {
+	if val, yn := cache.Get(url); yn {
+		return val, nil
+	}
+
+	//time.Sleep(2 * time.Second)
 
 	res, err := http.Get(url)
 	if err != nil {
@@ -26,6 +27,8 @@ func apiGet(endpoint string) ([]byte, error) {
 	if err != nil {
 		return []byte{}, fmt.Errorf("failed to read response body")
 	}
+
+	cache.Add(url, dat)
 
 	return dat, nil
 }

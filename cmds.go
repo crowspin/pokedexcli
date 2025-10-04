@@ -4,6 +4,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"time"
+
+	"github.com/crowspin/pokecache"
 )
 
 var CommandRegistry map[string]cliCommand
@@ -11,12 +14,18 @@ var CommandRegistry map[string]cliCommand
 type cliCommand struct {
 	name        string
 	description string
-	callback    func(config) error
+	callback    func(*config) error
 }
 
-type config struct{}
+type config struct {
+	Next     string
+	Previous string
+}
+
+var cache pokecache.Cache
 
 func initCommands() {
+	cache = pokecache.NewCache(5 * time.Second)
 	CommandRegistry = map[string]cliCommand{
 		"exit": {
 			name:        "exit",
@@ -41,7 +50,7 @@ func initCommands() {
 	}
 }
 
-func commandHelp(c config) error {
+func commandHelp(c *config) error {
 	fmt.Print("Welcome to the Pokedex!\nUsage:\n\n")
 	for _, v := range CommandRegistry {
 		fmt.Printf("%s: %s\n", v.name, v.description)
@@ -49,43 +58,42 @@ func commandHelp(c config) error {
 	return nil
 }
 
-func commandExit(c config) error {
+func commandExit(c *config) error {
 	fmt.Println("Closing the Pokedex... Goodbye!")
 	os.Exit(0)
 	return nil
 }
 
-var mapPage int
-
-func commandMap(c config) error {
-	mapPage++
-	fetchMapPage()
+func commandMap(c *config) error {
+	fetchMapPage(c, c.Next)
 	return nil
 }
 
-func commandMapb(c config) error {
-	mapPage--
-	fetchMapPage()
+func commandMapb(c *config) error {
+	fetchMapPage(c, c.Previous)
 	return nil
 }
 
-func fetchMapPage() { //[]string {
-	val, err := apiGet(fmt.Sprintf("/location-area?offset=%v&limit=20", (mapPage-1)*20))
+func fetchMapPage(c *config, dest string) {
+	if dest == "" {
+		dest = APIURL + "/location-area"
+	}
+
+	val, err := apiGet(dest)
 	if err != nil {
 		fmt.Printf("network error: %v\n", err)
-		//return nil
 	}
 
 	var js LocationAreaResult
 	if err := json.Unmarshal(val, &js); err != nil {
+		fmt.Println(string(val))
 		fmt.Printf("failed to unmarshal response: %v\n", err)
-		//return nil
 	}
 
-	//locations := []string{}
+	c.Next = js.Next
+	c.Previous = js.Previous
+
 	for _, val := range js.Results {
-		//locations = append(locations, val.Name)
 		fmt.Println(val.Name)
 	}
-	//return locations
 }
