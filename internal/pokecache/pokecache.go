@@ -5,10 +5,6 @@ import (
 	"time"
 )
 
-const (
-	MAX_CACHE_SECONDS time.Duration = 10 * time.Second
-)
-
 type Cache struct {
 	internal map[string]cacheEntry
 	mu       *sync.Mutex
@@ -50,7 +46,7 @@ func (c *Cache) reapLoop(interval time.Duration) {
 	for range ticker.C {
 		c.mu.Lock()
 		for k, v := range c.internal {
-			if time.Now().Add(-MAX_CACHE_SECONDS).After(v.createdAt) {
+			if time.Now().Add(-interval).After(v.createdAt) {
 				delete(c.internal, k)
 			}
 		}
