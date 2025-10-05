@@ -20,6 +20,7 @@ type cliCommand struct {
 type config struct {
 	Next     string
 	Previous string
+	Args     []string
 }
 
 var cache pokecache.Cache
@@ -46,6 +47,11 @@ func initCommands() {
 			name:        "mapb",
 			description: "Displays the previous page of locations on the map",
 			callback:    commandMapb,
+		},
+		"explore": {
+			name:        "explore",
+			description: "Lists the pokemon it's possible to encounter in an area",
+			callback:    commandExplore,
 		},
 	}
 }
@@ -82,12 +88,13 @@ func fetchMapPage(c *config, dest string) {
 	val, err := apiGet(dest)
 	if err != nil {
 		fmt.Printf("network error: %v\n", err)
+		return
 	}
 
 	var js LocationAreaResult
 	if err := json.Unmarshal(val, &js); err != nil {
-		fmt.Println(string(val))
 		fmt.Printf("failed to unmarshal response: %v\n", err)
+		return
 	}
 
 	c.Next = js.Next
@@ -96,4 +103,26 @@ func fetchMapPage(c *config, dest string) {
 	for _, val := range js.Results {
 		fmt.Println(val.Name)
 	}
+}
+
+func commandExplore(c *config) error {
+	val, err := apiGet(APIURL + "/location-area/" + c.Args[1])
+	if err != nil {
+		fmt.Printf("network error: %v\n", err)
+		return nil
+	}
+
+	var js LocationAreaData
+	if err := json.Unmarshal(val, &js); err != nil {
+		fmt.Printf("failed to unmarshal response: %v\n", err)
+		return nil
+	}
+
+	fmt.Println("Found Pokemon:")
+	for _, pkmn := range js.PokemonEncounters {
+		fmt.Println(" -", pkmn.Pokemon.Name)
+	}
+	return nil
+	//I can't wait to finish this project so I can refactor it into a reasonable application. I'm never going to use it but this is being presented in such an overcomplicated manner.
+	//What may be lost in translation here is that I'm trying to finish the rest of the Python/Go path before the end of the month. I'm not sure how that's going to go, but I just don't have time to fully reorganize myself every single lesson.
 }

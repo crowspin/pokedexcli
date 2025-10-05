@@ -15,6 +15,7 @@ func main() {
 		fmt.Print("Pokedex > ")
 		input.Scan()
 		args := cleanInput(input.Text())
+		cfg.Args = args
 		if cmd, ok := CommandRegistry[args[0]]; ok {
 			cmd.callback(&cfg)
 		} else {
