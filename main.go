@@ -10,7 +10,9 @@ import (
 func main() {
 	initCommands()
 	input := bufio.NewScanner(os.Stdin)
-	cfg := config{}
+	cfg := config{
+		Pokedex: make(map[string]Pokemon),
+	}
 	for {
 		fmt.Print("Pokedex > ")
 		input.Scan()

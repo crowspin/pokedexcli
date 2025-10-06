@@ -43,3 +43,22 @@ type LocationAreaData struct {
 		} `json:"version_details"`
 	} `json:"pokemon_encounters"`
 }
+
+type Pokemon struct {
+	Id             int    `json:"id"`
+	Name           string `json:"name"`
+	BaseExperience int    `json:"base_experience"`
+	Height         int    `json:"height"`
+	IsDefault      bool   `json:"is_default"`
+	Order          int    `json:"order"`
+	Weight         int    `json:"weight"`
+	Stats          []struct {
+		BaseStat int  `json:"base_stat"`
+		Effort   int  `json:"effort"`
+		Stat     Link `json:"stat"`
+	} `json:"stats"`
+	Types []struct {
+		Slot int  `json:"slot"`
+		Type Link `json:"type"`
+	} `json:"types"`
+}

@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"math/rand"
 	"os"
 	"time"
 
@@ -21,6 +22,7 @@ type config struct {
 	Next     string
 	Previous string
 	Args     []string
+	Pokedex  map[string]Pokemon
 }
 
 var cache pokecache.Cache
@@ -52,6 +54,21 @@ func initCommands() {
 			name:        "explore",
 			description: "Lists the pokemon it's possible to encounter in an area",
 			callback:    commandExplore,
+		},
+		"catch": {
+			name:        "catch",
+			description: "Tries to catch a pokemon",
+			callback:    commandCatch,
+		},
+		"inspect": {
+			name:        "inspect",
+			description: "Shows the stats of a caught pokemon",
+			callback:    commandInspect,
+		},
+		"pokedex": {
+			name:        "pokedex",
+			description: "Lists Pokemon you've caught",
+			callback:    commandPokedex,
 		},
 	}
 }
@@ -125,4 +142,57 @@ func commandExplore(c *config) error {
 	return nil
 	//I can't wait to finish this project so I can refactor it into a reasonable application. I'm never going to use it but this is being presented in such an overcomplicated manner.
 	//What may be lost in translation here is that I'm trying to finish the rest of the Python/Go path before the end of the month. I'm not sure how that's going to go, but I just don't have time to fully reorganize myself every single lesson.
+}
+
+func commandCatch(c *config) error {
+	targetName := c.Args[1]
+	val, err := apiGet(APIURL + "/pokemon/" + targetName)
+	if err != nil {
+		fmt.Printf("network error: %v\n", err)
+		return nil
+	}
+
+	var js Pokemon
+	if err := json.Unmarshal(val, &js); err != nil {
+		fmt.Printf("failed to unmarshal response: %v\n", err)
+		return nil
+	}
+
+	fmt.Printf("Throwing a Pokeball at %v...\n", targetName)
+
+	if rand.Intn(js.BaseExperience) < 25 {
+		fmt.Printf("%s was caught!\n", targetName)
+		c.Pokedex[targetName] = js
+	} else {
+		fmt.Printf("%s escaped!\n", targetName)
+	}
+	return nil
+	//handle no args[1]
+}
+
+func commandInspect(c *config) error {
+	if val, ok := c.Pokedex[c.Args[1]]; ok {
+		fmt.Printf("Name: %s\n", val.Name)
+		fmt.Printf("Height: %v\n", val.Height)
+		fmt.Printf("Weight: %v\n", val.Weight)
+		fmt.Printf("Stats:\n")
+		for _, v := range val.Stats {
+			fmt.Printf("  -%s: %v\n", v.Stat.Name, v.BaseStat)
+		}
+		fmt.Printf("Types:\n")
+		for _, v := range val.Types {
+			fmt.Printf("  - %s\n", v.Type.Name)
+		}
+	} else {
+		fmt.Printf("you have not caught that pokemon")
+	}
+	return nil
+}
+
+func commandPokedex(c *config) error {
+	fmt.Println("Your Pokedex:")
+	for _, p := range c.Pokedex {
+		fmt.Printf(" - %s\n", p.Name)
+	}
+	return nil
 }
